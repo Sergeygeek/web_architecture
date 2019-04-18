@@ -77,15 +77,13 @@ class Basket
     /**
      * Оформление заказа
      *
+     * @param IDiscount $discount
      * @return void
      */
-    public function checkout(): void
+    public function checkout(IDiscount $discount): void
     {
         // Здесь должна быть некоторая логика выбора способа платежа
         $billing = new Card();
-
-        // Здесь должна быть некоторая логика получения информации о скидки пользователя
-        $discount = new NullObject();
 
         // Здесь должна быть некоторая логика получения способа уведомления пользователя о покупке
         $communication = new Email();
