@@ -9,6 +9,8 @@ use Service\Billing\Card;
 use Service\Billing\IBilling;
 use Service\Communication\Email;
 use Service\Communication\ICommunication;
+use Service\Communication\NotificationSender;
+use Service\Communication\Sms;
 use Service\Discount\IDiscount;
 use Service\Discount\NullObject;
 use Service\User\ISecurity;
@@ -72,6 +74,22 @@ class Basket
     {
         $productIds = $this->getProductIds();
         return $this->getProductRepository()->search($productIds);
+    }
+
+    public function getNotificationSender(string $send)
+    {
+        switch ($send) {
+            case 'email':
+                $strategy = new NotificationSender(new Email());
+                break;
+
+            case 'sms':
+                $strategy = new NotificationSender(new Sms());
+                break;
+
+            default:
+                return;
+        }
     }
 
     /**
