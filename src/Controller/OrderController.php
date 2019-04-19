@@ -5,8 +5,6 @@ declare(strict_types = 1);
 namespace Controller;
 
 use Framework\Render;
-use Service\Discount\IDiscount;
-use Service\Discount\PromoCode;
 use Service\Order\Basket;
 use Service\User\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,7 +45,7 @@ class OrderController
             return $this->redirect('user_authentication');
         }
 
-        (new Basket($request->getSession()))->checkout(new PromoCode('promo'));
+        (new Basket($request->getSession()))->checkout();
 
         return $this->render('order/checkout.html.php');
     }
