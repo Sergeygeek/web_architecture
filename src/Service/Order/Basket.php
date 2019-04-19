@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Service\Order;
 
+use Framework\Registry;
 use Model;
 use Service\Billing\Card;
 use Service\Billing\IBilling;
@@ -18,9 +19,10 @@ use Service\Discount\PromoCode;
 use Service\Discount\VipDiscount;
 use Service\User\ISecurity;
 use Service\User\Security;
+use SplObserver;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-class Basket
+class Basket implements \SplSubject
 {
     /**
      * Сессионный ключ списка всех продуктов корзины
@@ -33,12 +35,18 @@ class Basket
      */
     private $session;
 
+    private $observers = [];
+
     /**
      * @param SessionInterface $session
      */
     public function __construct(SessionInterface $session)
     {
         $this->session = $session;
+
+        foreach (Registry::getDataConfig('order.listeners') as $listener){
+            $this->attach(new $listener);
+        }
     }
 
     /**
@@ -166,5 +174,24 @@ class Basket
     private function getProductIds(): array
     {
         return $this->session->get(static::BASKET_DATA_KEY, []);
+    }
+
+    public function attach(SplObserver $observer)
+    {
+        if(!array_key_exists(get_class($observer), $this->observers)){
+            $this->observers[get_class($observer)] = $observer;
+        }
+    }
+
+    public function detach(SplObserver $observer)
+    {
+        unset($this->observers[get_class($observer)]);
+    }
+
+    public function notify()
+    {
+        foreach ($this->observers as $observer){
+            $observer->update();
+        }
     }
 }
