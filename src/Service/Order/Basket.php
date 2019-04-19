@@ -11,8 +11,11 @@ use Service\Communication\Email;
 use Service\Communication\ICommunication;
 use Service\Communication\NotificationSender;
 use Service\Communication\Sms;
+use Service\Discount\Discounter;
 use Service\Discount\IDiscount;
 use Service\Discount\NullObject;
+use Service\Discount\PromoCode;
+use Service\Discount\VipDiscount;
 use Service\User\ISecurity;
 use Service\User\Security;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -24,6 +27,7 @@ class Basket
      */
     private const BASKET_DATA_KEY = 'basket';
 
+    private $user;
     /**
      * @var SessionInterface
      */
@@ -76,20 +80,22 @@ class Basket
         return $this->getProductRepository()->search($productIds);
     }
 
-    public function getNotificationSender(string $send)
+    public function getDiscount(string $send)
     {
         switch ($send) {
-            case 'email':
-                $strategy = new NotificationSender(new Email());
+            case 'promo':
+                $strategy = new Discounter(new PromoCode('promo'));
                 break;
 
-            case 'sms':
-                $strategy = new NotificationSender(new Sms());
+            case 'vip':
+                $strategy = new Discounter(new VipDiscount($this->user));
                 break;
 
             default:
-                return;
+                $strategy = new Discounter(new NullObject());
         }
+
+        return $strategy;
     }
 
     /**
@@ -103,10 +109,10 @@ class Basket
         $billing = new Card();
 
         // Здесь должна быть некоторая логика получения информации о скидки пользователя
-        $discount = new NullObject();
+        $discount = $this->getDiscount('promo');
 
         // Здесь должна быть некоторая логика получения способа уведомления пользователя о покупке
-        $communication = new Email();
+        $communication = $this->getNotificationSender('sms');
 
         $security = new Security($this->session);
 
