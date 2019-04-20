@@ -6,7 +6,7 @@ namespace Service\Communication;
 
 use Model;
 
-class Sms implements ICommunication
+class Sms implements ICommunication, \SplObserver
 {
     /**
      * @inheritdoc
@@ -14,5 +14,10 @@ class Sms implements ICommunication
     public function process(Model\Entity\User $user, string $templateName, array $params = []): void
     {
         // Вызываем метод по формированию смс текста и последующего его отправления
+    }
+
+    public function update(\SplSubject $subject)
+    {
+        // TODO: Implement update() method.
     }
 }

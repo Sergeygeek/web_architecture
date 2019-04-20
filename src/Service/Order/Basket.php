@@ -111,20 +111,20 @@ class Basket implements \SplSubject
      *
      * @return void
      */
-    public function checkout(): void
+    public function checkout(BasketBuilder $basketBuilder): void
     {
         // Здесь должна быть некоторая логика выбора способа платежа
-        $billing = new Card();
+        $basketBuilder->setBilling(new Card());
 
         // Здесь должна быть некоторая логика получения информации о скидки пользователя
-        $discount = $this->getDiscount('promo');
+        $basketBuilder->setDiscount($this->getDiscount('promo'));
 
         // Здесь должна быть некоторая логика получения способа уведомления пользователя о покупке
-        $communication = $this->getNotificationSender('sms');
+        $basketBuilder->setCommunication(new Email());
 
-        $security = new Security($this->session);
+        $basketBuilder->setSecurity(new Security($this->session));
 
-        $this->checkoutProcess($discount, $billing, $security, $communication);
+        $this->checkoutProcess($basketBuilder);
     }
 
     /**
@@ -137,22 +137,25 @@ class Basket implements \SplSubject
      * @return void
      */
     public function checkoutProcess(
-        IDiscount $discount,
-        IBilling $billing,
-        ISecurity $security,
-        ICommunication $communication
+        BasketBuilder $basketBuilder
     ): void {
         $totalPrice = 0;
         foreach ($this->getProductsInfo() as $product) {
             $totalPrice += $product->getPrice();
         }
 
-        $discount = $discount->getDiscount();
+        $discount = $basketBuilder->getDiscount();
         $totalPrice = $totalPrice - $totalPrice / 100 * $discount;
+
+        $billing = $basketBuilder->getBilling();
 
         $billing->pay($totalPrice);
 
+        $security = $basketBuilder->getSecurity();
+
         $user = $security->getUser();
+
+        $communication = $basketBuilder->getCommunication();
         $communication->process($user, 'checkout_template');
     }
 
