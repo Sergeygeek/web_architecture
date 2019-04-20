@@ -15,7 +15,7 @@ use Service\Discount\Discounter;
 use Service\Discount\IDiscount;
 use Service\User\ISecurity;
 
-class BasketBuilder
+class OrderBuilder
 {
     private $billing;
     private $discount;
