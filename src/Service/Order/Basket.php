@@ -4,28 +4,38 @@ declare(strict_types = 1);
 
 namespace Service\Order;
 
+use Framework\Registry;
 use Model;
 use Service\Billing\Card;
 use Service\Billing\IBilling;
 use Service\Communication\Email;
 use Service\Communication\ICommunication;
+use Service\Communication\NotificationSender;
+use Service\Communication\Sms;
+use Service\Discount\Discounter;
 use Service\Discount\IDiscount;
 use Service\Discount\NullObject;
+use Service\Discount\PromoCode;
+use Service\Discount\VipDiscount;
 use Service\User\ISecurity;
 use Service\User\Security;
+use SplObserver;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-class Basket
+class Basket implements \SplSubject
 {
     /**
      * Сессионный ключ списка всех продуктов корзины
      */
     private const BASKET_DATA_KEY = 'basket';
 
+    private $user;
     /**
      * @var SessionInterface
      */
     private $session;
+
+    private $observers = [];
 
     /**
      * @param SessionInterface $session
@@ -33,6 +43,10 @@ class Basket
     public function __construct(SessionInterface $session)
     {
         $this->session = $session;
+
+        foreach (Registry::getDataConfig('order.listeners') as $listener){
+            $this->attach(new $listener);
+        }
     }
 
     /**
@@ -74,19 +88,39 @@ class Basket
         return $this->getProductRepository()->search($productIds);
     }
 
+    public function getDiscount(string $send)
+    {
+        switch ($send) {
+            case 'promo':
+                $strategy = new Discounter(new PromoCode('promo'));
+                break;
+
+            case 'vip':
+                $strategy = new Discounter(new VipDiscount($this->user));
+                break;
+
+            default:
+                $strategy = new Discounter(new NullObject());
+        }
+
+        return $strategy;
+    }
+
     /**
      * Оформление заказа
      *
-     * @param IDiscount $discount
      * @return void
      */
-    public function checkout(IDiscount $discount): void
+    public function checkout(): void
     {
         // Здесь должна быть некоторая логика выбора способа платежа
         $billing = new Card();
 
+        // Здесь должна быть некоторая логика получения информации о скидки пользователя
+        $discount = $this->getDiscount('promo');
+
         // Здесь должна быть некоторая логика получения способа уведомления пользователя о покупке
-        $communication = new Email();
+        $communication = $this->getNotificationSender('sms');
 
         $security = new Security($this->session);
 
@@ -140,5 +174,24 @@ class Basket
     private function getProductIds(): array
     {
         return $this->session->get(static::BASKET_DATA_KEY, []);
+    }
+
+    public function attach(SplObserver $observer)
+    {
+        if(!array_key_exists(get_class($observer), $this->observers)){
+            $this->observers[get_class($observer)] = $observer;
+        }
+    }
+
+    public function detach(SplObserver $observer)
+    {
+        unset($this->observers[get_class($observer)]);
+    }
+
+    public function notify()
+    {
+        foreach ($this->observers as $observer){
+            $observer->update();
+        }
     }
 }
