@@ -109,6 +109,7 @@ class Basket implements \SplSubject
     /**
      * Оформление заказа
      *
+     * @param BasketBuilder $basketBuilder
      * @return void
      */
     public function checkout(BasketBuilder $basketBuilder): void
@@ -124,16 +125,13 @@ class Basket implements \SplSubject
 
         $basketBuilder->setSecurity(new Security($this->session));
 
-        $this->checkoutProcess($basketBuilder);
+        $this->checkoutProcess($basketBuilder->build());
     }
 
     /**
      * Проведение всех этапов заказа
      *
-     * @param IDiscount $discount,
-     * @param IBilling $billing,
-     * @param ISecurity $security,
-     * @param ICommunication $communication
+     * @param BasketBuilder $basketBuilder
      * @return void
      */
     public function checkoutProcess(
