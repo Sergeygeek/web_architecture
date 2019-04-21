@@ -8,6 +8,15 @@ use Model\Entity;
 
 class Product
 {
+    private $entityProduct;
+
+    public function __construct($id)
+    {
+        $item = $this->getDataFromSource($id);
+        $this->entityProduct = new Entity\Product($item['id'], $item['name'], $item['price']);
+    }
+
+
     /**
      * Поиск продуктов по массиву id
      *
@@ -22,10 +31,19 @@ class Product
 
         $productList = [];
         foreach ($this->getDataFromSource(['id' => $ids]) as $item) {
-            $productList[] = new Entity\Product($item['id'], $item['name'], $item['price']);
+            $productList[] = $this->cloneProduct($item);
         }
 
         return $productList;
+    }
+
+    public function cloneProduct(array $item)
+    {
+        $product = clone $this->entityProduct;
+        $product->setId($item['id']);
+        $product->setName($item['name']);
+        $product->setPrice($item['price']);
+        return $product;
     }
 
     /**
@@ -37,7 +55,7 @@ class Product
     {
         $productList = [];
         foreach ($this->getDataFromSource() as $item) {
-            $productList[] = new Entity\Product($item['id'], $item['name'], $item['price']);
+            $productList[] = $this->cloneProduct($item);
         }
 
         return $productList;
