@@ -21,6 +21,15 @@ class Product
     }
 
     /**
+     * @param int $id
+     * @return Model\Entity\Product
+     */
+    public function getProduct(int $id)
+    {
+        return $this->getProductRepository()->search([$id]);
+    }
+
+    /**
      * Получаем все продукты
      *
      * @param string $sortType

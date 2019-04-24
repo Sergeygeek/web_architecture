@@ -58,6 +58,30 @@ class Product
     }
 
     /**
+     * @return int
+     */
+    public function setId($id): int
+    {
+        $this->id = $id;
+    }
+
+    /**
+     * @return string
+     */
+    public function setName($name): string
+    {
+        $this->name = $name;
+    }
+
+    /**
+     * @return float
+     */
+    public function setPrice($price): float
+    {
+        $this->price = $price;
+    }
+
+    /**
      * @return array
      */
     public function toArray(): array

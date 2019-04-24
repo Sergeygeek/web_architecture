@@ -109,50 +109,51 @@ class Basket implements \SplSubject
     /**
      * Оформление заказа
      *
+     * @param OrderBuilder $orderBuilder
      * @return void
      */
-    public function checkout(): void
+    public function checkout(OrderBuilder $orderBuilder): void
     {
         // Здесь должна быть некоторая логика выбора способа платежа
-        $billing = new Card();
+        $orderBuilder->setBilling(new Card());
 
         // Здесь должна быть некоторая логика получения информации о скидки пользователя
-        $discount = $this->getDiscount('promo');
+        $orderBuilder->setDiscount($this->getDiscount('promo'));
 
         // Здесь должна быть некоторая логика получения способа уведомления пользователя о покупке
-        $communication = $this->getNotificationSender('sms');
+        $orderBuilder->setCommunication(new Email());
 
-        $security = new Security($this->session);
+        $orderBuilder->setSecurity(new Security($this->session));
 
-        $this->checkoutProcess($discount, $billing, $security, $communication);
+        $this->checkoutProcess($orderBuilder->build());
     }
 
     /**
      * Проведение всех этапов заказа
      *
-     * @param IDiscount $discount,
-     * @param IBilling $billing,
-     * @param ISecurity $security,
-     * @param ICommunication $communication
+     * @param OrderBuilder $orderBuilder
      * @return void
      */
     public function checkoutProcess(
-        IDiscount $discount,
-        IBilling $billing,
-        ISecurity $security,
-        ICommunication $communication
+        OrderBuilder $orderBuilder
     ): void {
         $totalPrice = 0;
         foreach ($this->getProductsInfo() as $product) {
             $totalPrice += $product->getPrice();
         }
 
-        $discount = $discount->getDiscount();
+        $discount = $orderBuilder->getDiscount();
         $totalPrice = $totalPrice - $totalPrice / 100 * $discount;
+
+        $billing = $orderBuilder->getBilling();
 
         $billing->pay($totalPrice);
 
+        $security = $orderBuilder->getSecurity();
+
         $user = $security->getUser();
+
+        $communication = $orderBuilder->getCommunication();
         $communication->process($user, 'checkout_template');
     }
 
