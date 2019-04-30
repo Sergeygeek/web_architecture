@@ -125,36 +125,9 @@ class Basket implements \SplSubject
 
         $orderBuilder->setSecurity(new Security($this->session));
 
-        $this->checkoutProcess($orderBuilder->build());
-    }
+        $transaction = new OrderTransaction($orderBuilder->build());
 
-    /**
-     * Проведение всех этапов заказа
-     *
-     * @param OrderBuilder $orderBuilder
-     * @return void
-     */
-    public function checkoutProcess(
-        OrderBuilder $orderBuilder
-    ): void {
-        $totalPrice = 0;
-        foreach ($this->getProductsInfo() as $product) {
-            $totalPrice += $product->getPrice();
-        }
-
-        $discount = $orderBuilder->getDiscount();
-        $totalPrice = $totalPrice - $totalPrice / 100 * $discount;
-
-        $billing = $orderBuilder->getBilling();
-
-        $billing->pay($totalPrice);
-
-        $security = $orderBuilder->getSecurity();
-
-        $user = $security->getUser();
-
-        $communication = $orderBuilder->getCommunication();
-        $communication->process($user, 'checkout_template');
+        $transaction->order($this->getProductsInfo());
     }
 
     /**
