@@ -16,9 +16,12 @@ class Security implements ISecurity
      */
     private $session;
 
-    public function __construct(SessionInterface $session)
+    private $dataSource;
+
+    public function __construct(SessionInterface $session, $dataSource)
     {
         $this->session = $session;
+        $this->dataSource = $dataSource;
     }
 
     /**
@@ -28,7 +31,7 @@ class Security implements ISecurity
     {
         $userId = $this->session->get(self::SESSION_USER_IDENTITY);
 
-        return $userId ? (new Model\Repository\User())->getById($userId) : null;
+        return $userId ? (new Model\DataMapper\UserMapper($this->dataSource))->getById($userId) : null;
     }
 
     /**
@@ -74,10 +77,10 @@ class Security implements ISecurity
     /**
      * Фабричный метод для репозитория User
      *
-     * @return Model\Repository\User
+     * @return Model\DataMapper\UserMapper
      */
-    protected function getUserRepository(): Model\Repository\User
+    protected function getUserRepository(): Model\DataMapper\UserMapper
     {
-        return new Model\Repository\User();
+        return new Model\DataMapper\UserMapper($this->dataSource);
     }
 }
